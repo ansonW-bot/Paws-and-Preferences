@@ -3,10 +3,9 @@ import TinderCard from "react-tinder-card"
 import type { Cat } from "../interface/Cats";
 
 export default function CatSwiper() {
-  const [amtCats, setAmtCats] = useState(10);
+  const [amtCats] = useState(10);
   const [cats, setCats] = useState<Cat[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lastDirection, setLastDirection] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(true);
   const [loading, setLoading] = useState(true);
   const [likedCats, setLikedCats] = useState<Cat[]>([]); // Track liked cats
@@ -55,10 +54,6 @@ export default function CatSwiper() {
     }
   }, [currentIndex, cats.length]);
 
-  useEffect(() => {
-  console.log("showResults updated:", showResults);
-}, [showResults]);
-
   const childRefs = useMemo(
     () =>
       Array(amtCats)
@@ -75,7 +70,6 @@ export default function CatSwiper() {
   const canSwipe = currentIndex >= 0;
 
   const swiped = (direction: string, catUrl: string, index: number) => {
-    setLastDirection(direction);
     updateCurrentIndex(index - 1);
     
     // Add to liked cats if swiped right
@@ -89,11 +83,9 @@ export default function CatSwiper() {
     }
     
     
-    console.log(direction === "right" ? `Liked ${catUrl}` : `Disliked ${catUrl}`);
   };
 
   const outOfFrame = (idx: number) => {
-    console.log(`${idx} left the screen`);
     if (currentIndexRef.current >= idx) {
       childRefs[idx].current.restoreCard();
     }
