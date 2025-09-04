@@ -8,22 +8,56 @@ export default function CatSwiper() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastDirection, setLastDirection] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [likedCats, setLikedCats] = useState<Cat[]>([]); // Track liked cats
+  const [showResults, setShowResults] = useState(false); // Show results when done
   const currentIndexRef = useRef(0);
+  const [showHeart, setShowHeart] = useState(false);
 
   useEffect(() => {
-    const loadCats = () => {
-      const newCats = [];
-      for (let i = 0; i < amtCats; i++) {
-        newCats.push({
-          url: `https://cataas.com/cat?${Date.now()}-${i}`,
-        });
+    const loadCats = async () => {
+      setLoading(true);
+      try {
+        const newCats = [];
+        for (let i = 0; i < amtCats; i++) {
+          newCats.push({
+            url: `https://cataas.com/cat?${Date.now()}-${i}`,
+          });
+        }
+        setCats(newCats);
+        setCurrentIndex(newCats.length - 1);
+        currentIndexRef.current = newCats.length - 1;
+
+        await Promise.all(
+          newCats.map((cat) => {
+            return new Promise((resolve, reject) => {
+              const img = new Image();
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = cat.url;
+            });
+          })
+        );
+
+      } catch (error) {
+        console.error("Error loading cats:", error);
+      } finally {
+        setLoading(false);
       }
-      setCats(newCats);
-      setCurrentIndex(newCats.length - 1);
-      currentIndexRef.current = newCats.length - 1;
     };
     loadCats();
   }, [amtCats]);
+
+  // Check if all cats have been swiped
+  useEffect(() => {
+    if (currentIndex === -1 && cats.length > 0 && !showResults) {
+      setShowResults(true);
+    }
+  }, [currentIndex, cats.length]);
+
+  useEffect(() => {
+  console.log("showResults updated:", showResults);
+}, [showResults]);
 
   const childRefs = useMemo(
     () =>
@@ -43,6 +77,18 @@ export default function CatSwiper() {
   const swiped = (direction: string, catUrl: string, index: number) => {
     setLastDirection(direction);
     updateCurrentIndex(index - 1);
+    
+    // Add to liked cats if swiped right
+    if (direction === "right") {
+      const likedCat = cats.find(cat => cat.url === catUrl);
+      if (likedCat) {
+        setLikedCats(prev => [...prev, likedCat]);
+      }
+      setShowHeart(true);
+      setTimeout(() => setShowHeart(false), 200);
+    }
+    
+    
     console.log(direction === "right" ? `Liked ${catUrl}` : `Disliked ${catUrl}`);
   };
 
@@ -59,80 +105,215 @@ export default function CatSwiper() {
     }
   };
 
+ const loadNewCats = async () => {
+  setLikedCats([]);
+  
+  setLoading(true);
+
+
+  try {
+    const newCats = [];
+    for (let i = 0; i < amtCats; i++) {
+      newCats.push({
+        url: `https://cataas.com/cat?${Date.now()}-${i}`,
+      });
+    }
+
+    // Preload images
+    await Promise.all(
+      newCats.map(
+        (cat) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = cat.url;
+          })
+      )
+    );
+    setCats(newCats);
+    setShowResults(false)
+
+    setCurrentIndex(newCats.length - 1);
+    currentIndexRef.current = newCats.length - 1;
+
+  } catch (error) {
+    console.error("Error loading new cats:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen w-screen bg-gradient-to-br from-pink-100 to-blue-100">
+        <div className="text-center">
+          <div className="text-6xl animate-spin">🧶</div>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-700">Loading Cats...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Results screen - show liked cats
+  if (showResults) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen w-screen bg-gradient-to-br from-pink-100 to-blue-100 p-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-8 text-center">
+          {likedCats.length > 0 ? "Your Purr-fect Matches! 🐾" : "No matches yet 😿"}
+        </h1>
+        
+        {likedCats.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 mb-8 max-w-4xl mx-auto">
+              {likedCats.map((cat, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-200">
+                  <img
+                    src={cat.url}
+                    alt={`Liked cat ${index + 1}`}
+                    className="w-full h-32 sm:h-40 md:h-48 object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-lg sm:text-xl mb-6 text-gray-700">
+  You liked <span className="font-bold text-pink-600">{likedCats.length}</span> out of 
+  <span className="font-bold  text-pink-600"> {cats.length}</span> cats!
+</p>
+          </>
+        ) : (
+          <p className="text-lg sm:text-xl mb-6 text-gray-700 text-center">
+            No cats here. Give it another try!
+          </p>
+        )}
+        
+        <div className="flex gap-4 sm:gap-6">
+          <button
+            onClick={loadNewCats}
+            className="bg-green-500 px-6 py-3 sm:px-8 sm:py-4 rounded-lg shadow-lg hover:bg-green-600 transition text-lg font-semibold text-white"
+          >
+            More Cats!!! 😻
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center mt-10 relative">
-      <h1 className="text-2xl font-bold mb-6">Swipe the Cats</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen w-screen bg-gradient-to-br from-pink-100 to-blue-100 p-4">
+     <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 text-pink-600 drop-shadow-md tracking-wide font-[Comic Sans MS]">
+  🐱 Swipe the Cats 🐾
+</h1>
 
       {/* Card Stack */}
-      <div className="relative w-80 h-[400px]">
+      <div className="relative w-full max-w-md h-[55vh] sm:h-[60vh] md:h-[65vh] lg:h-[70vh] overflow-hidden">
         {cats.map((cat, index) => {
-          const offset = cats.length - index - 1; // lower index = deeper in stack
+          const offset = cats.length - index - 1;
+          const scaleFactor = 1 - offset * 0.02;
+          const translateY = offset * 2;
+          
           return (
             <TinderCard
-              ref={childRefs[index]}
-              className="absolute w-full h-full select-none"
-              key={cat.url}
-              onSwipe={(dir) => swiped(dir, cat.url, index)}
-              onCardLeftScreen={() => outOfFrame(index)}
-              preventSwipe={["up", "down"]}
-              flickOnSwipe={true}                // <-- enable auto-flick
-              swipeRequirementType="velocity"    // <-- base swipe on distance, not velocity
-              swipeThreshold={0.2}   
-            >
-              <div
-                className={`bg-white rounded-2xl shadow-lg w-full h-full flex items-center justify-center transition-transform duration-300`}
-                style={{
-                  transform: `translateY(${offset * 8}px) scale(${1 - offset * 0.02})`,
-                  zIndex: index,
-                }}
-              >
-                <img
-                  src={cat.url}
-                  alt={`Cat ${index + 1}`}
-                  className="w-full h-full object-cover rounded-2xl"
-                />
-              </div>
-            </TinderCard>
+  ref={childRefs[index]}
+  className="absolute w-full h-full select-none touch-none"
+  key={cat.url}
+  onSwipe={(dir) => swiped(dir, cat.url, index)}
+  onCardLeftScreen={() => outOfFrame(index)}
+  preventSwipe={["up", "down"]}
+  flickOnSwipe={true}
+  swipeRequirementType="position"
+  swipeThreshold={20}
+>
+  <div
+    className={`bg-white rounded-2xl shadow-lg w-full h-full flex items-center justify-center transition-transform duration-300 select-none touch-none`}
+    style={{
+      transform: `translateY(${translateY}px) scale(${scaleFactor})`,
+      zIndex: index,
+    }}
+  >
+    <img
+      src={cat.url}
+      alt={`Cat ${index + 1}`}
+      className="w-full h-full object-cover rounded-2xl pointer-events-none select-none touch-none"
+      draggable="false"
+    />
+
+    
+  </div>
+</TinderCard>
           );
         })}
       </div>
 
       {/* Control buttons */}
-      <div className="flex gap-4 mt-6">
+      <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-5 md:mt-6">
         <button
           onClick={() => swipe("left")}
           disabled={!canSwipe}
-          className={`px-4 py-2 rounded-lg shadow ${
-            canSwipe ? "bg-red-500 text-white" : "bg-gray-300 text-gray-500"
-          }`}
+          className={`px-4 py-2 sm:px-5 sm:py-3 md:px-6 md:py-3 rounded-lg shadow text-base sm:text-lg md:text-xl font-semibold ${
+            canSwipe 
+              ? "bg-red-500 text-white hover:bg-red-600" 
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          } transition-colors`}
         >
-          Dislike 👎
+          👎
         </button>
         <button
           onClick={() => swipe("right")}
           disabled={!canSwipe}
-          className={`px-4 py-2 rounded-lg shadow ${
-            canSwipe ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"
-          }`}
+          className={`px-4 py-2 sm:px-5 sm:py-3 md:px-6 md:py-3 rounded-lg shadow text-base sm:text-lg md:text-xl font-semibold ${
+            canSwipe 
+              ? "bg-green-500 text-white hover:bg-green-600" 
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          } transition-colors`}
         >
-          Like ❤️
+          ❤️
         </button>
+      </div>
+
+      {/* Progress indicator */}
+      <div className="mt-4 text-gray-600">
+        {currentIndex + 1} / {cats.length}
       </div>
 
       {/* Tutorial overlay */}
       {showTutorial && (
-        <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white p-6 rounded-xl">
-          <h2 className="text-2xl font-bold mb-4">How to Play</h2>
-          <p className="mb-2">➡ <span className="font-bold">Swipe Right</span> to Like</p>
-          <p className="mb-6">⬅ <span className="font-bold">Swipe Left</span> to Dislike</p>
-          <button
-            onClick={() => setShowTutorial(false)}
-            className="bg-blue-500 px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
-          >
-            Got it!
-          </button>
+        <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 text-center text-gray-800 shadow-2xl max-w-md w-full mx-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">How to Play</h2>
+            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+              <p className="text-lg sm:text-xl md:text-2xl flex items-center justify-center gap-2 sm:gap-3">
+                <span className="text-2xl sm:text-3xl">➡</span>
+                <span className="font-semibold">Swipe Right</span> to Like
+              </p>
+              <p className="text-lg sm:text-xl md:text-2xl flex items-center justify-center gap-2 sm:gap-3">
+                <span className="text-2xl sm:text-3xl">⬅</span>
+                <span className="font-semibold">Swipe Left</span> to Dislike
+              </p>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 mt-4">
+                See your matches at the end!
+              </p>
+            </div>
+            <button
+              onClick={() => setShowTutorial(false)}
+              className="bg-blue-500 px-6 py-3 sm:px-8 sm:py-4 rounded-lg shadow-lg hover:bg-blue-600 transition text-lg sm:text-xl font-semibold text-white w-full"
+            >
+              Got it! Let's Play 🐾
+            </button>
+          </div>
         </div>
       )}
+
+      {showHeart && (
+  <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+    <span className="text-red-500 text-[6rem] sm:text-[8rem] opacity-100 animate-fade-heart">
+      ❤️
+    </span>
+  </div>
+)}
+
+      
     </div>
   );
 }
