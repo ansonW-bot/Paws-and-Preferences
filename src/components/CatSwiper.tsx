@@ -17,6 +17,7 @@ export default function CatSwiper() {
    * Fetches cat images from Cataas API, preloads them and initialise the 
    * card stack with the latest index
    */
+
   useEffect(() => {
     const loadCats = async () => {
       setLoading(true);
@@ -43,6 +44,7 @@ export default function CatSwiper() {
             });
           })
         );
+
       } catch (error) {
         console.error("Error loading cats:", error);
       } finally {
@@ -63,6 +65,7 @@ export default function CatSwiper() {
 
   /**
    * Builds array of refs to not reset every render
+   * 
    */
   const childRefs = useMemo(
     () =>
@@ -74,6 +77,7 @@ export default function CatSwiper() {
 
   /**
    * Updates both state and refs for current index
+   * 
    */
   const updateCurrentIndex = (val: number) => {
     setCurrentIndex(val);
@@ -84,13 +88,13 @@ export default function CatSwiper() {
 
   /**
    * Handles swipe events
-   * - Updates current index 
-   * - Adds cat image to liked cats if swiped right
-   * - Triggers heart animation when swiped right
+   * - Updates current inde 
+   * - Adds cat image to kied cats if swiped right
+   * -  Triggers heart animation when swiped right
    */
   const swiped = (direction: string, catUrl: string, index: number) => {
     updateCurrentIndex(index - 1);
-
+    
     if (direction === "right") {
       const likedCat = cats.find(cat => cat.url === catUrl);
       if (likedCat) {
@@ -102,7 +106,8 @@ export default function CatSwiper() {
   };
 
   /**
-   * Restores card if swiped too early
+   * Restores card if swpied too early
+   * 
    */
   const outOfFrame = (idx: number) => {
     if (currentIndexRef.current >= idx) {
@@ -112,6 +117,7 @@ export default function CatSwiper() {
 
   /**
    * Swiping of the card itself
+   *  
    */
   const swipe = async (dir: string) => {
     if (canSwipe && currentIndex < cats.length) {
@@ -123,40 +129,42 @@ export default function CatSwiper() {
    * Triggers when "More cats" button is pressed
    * Clears liked cats, fetches new cats, preloads images and reset the card stack
    */
-  const loadNewCats = async () => {
-    setLikedCats([]);
-    setLoading(true);
+ const loadNewCats = async () => {
+  setLikedCats([]);
+  setLoading(true);
 
-    try {
-      const newCats = [];
-      for (let i = 0; i < amtCats; i++) {
-        newCats.push({
-          url: `https://cataas.com/cat?${Date.now()}-${i}`,
-        });
-      }
-
-      await Promise.all(
-        newCats.map(
-          (cat) =>
-            new Promise((resolve) => {
-              const img = new Image();
-              img.onload = resolve;
-              img.onerror = resolve;
-              img.src = cat.url;
-            })
-        )
-      );
-      setCats(newCats);
-      setShowResults(false);
-
-      setCurrentIndex(newCats.length - 1);
-      currentIndexRef.current = newCats.length - 1;
-    } catch (error) {
-      console.error("Error loading new cats:", error);
-    } finally {
-      setLoading(false);
+  try {
+    const newCats = [];
+    for (let i = 0; i < amtCats; i++) {
+      newCats.push({
+        url: `https://cataas.com/cat?${Date.now()}-${i}`,
+      });
     }
-  };
+
+    await Promise.all(
+      newCats.map(
+        (cat) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = cat.url;
+          })
+      )
+    );
+    setCats(newCats);
+    setShowResults(false)
+
+    setCurrentIndex(newCats.length - 1);
+    currentIndexRef.current = newCats.length - 1;
+
+  } catch (error) {
+    console.error("Error loading new cats:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Loading screen 
   if (loading) {
@@ -177,15 +185,12 @@ export default function CatSwiper() {
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-8 text-center">
           {likedCats.length > 0 ? "Your Purr-fect Matches! 🐾" : "No matches yet 😿"}
         </h1>
-
+        
         {likedCats.length > 0 ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 mb-8 max-w-4xl mx-auto">
               {likedCats.map((cat, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-200"
-                >
+                <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-200">
                   <img
                     src={cat.url}
                     alt={`Liked cat ${index + 1}`}
@@ -195,16 +200,16 @@ export default function CatSwiper() {
               ))}
             </div>
             <p className="text-lg sm:text-xl mb-6 text-gray-700">
-              You liked <span className="font-bold text-pink-600">{likedCats.length}</span> out of
-              <span className="font-bold text-pink-600"> {cats.length}</span> cats!
-            </p>
+  You liked <span className="font-bold text-pink-600">{likedCats.length}</span> out of 
+  <span className="font-bold  text-pink-600"> {cats.length}</span> cats!
+</p>
           </>
         ) : (
           <p className="text-lg sm:text-xl mb-6 text-gray-700 text-center">
             No cats here. Give it another try!
           </p>
         )}
-
+        
         <div className="flex gap-4 sm:gap-6">
           <button
             onClick={loadNewCats}
@@ -217,12 +222,12 @@ export default function CatSwiper() {
     );
   }
 
-  // Main Game screen
+  // Main Game screem
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-screen bg-gradient-to-br from-pink-100 to-blue-100 p-4">
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 text-pink-600 drop-shadow-md tracking-wide font-[Comic Sans MS]">
-        🐱 Swipe the Cats 🐾
-      </h1>
+     <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 text-pink-600 drop-shadow-md tracking-wide font-[Comic Sans MS]">
+  🐱 Swipe the Cats 🐾
+</h1>
 
       {/* Card Stack */}
       <div className="relative w-full max-w-md h-[55vh] sm:h-[60vh] md:h-[65vh] lg:h-[70vh] overflow-hidden">
@@ -230,34 +235,36 @@ export default function CatSwiper() {
           const offset = cats.length - index - 1;
           const scaleFactor = 1 - offset * 0.02;
           const translateY = offset * 2;
-
+          
           return (
             <TinderCard
-              ref={childRefs[index]}
-              className="absolute w-full h-full select-none touch-none"
-              key={cat.url}
-              onSwipe={(dir) => swiped(dir, cat.url, index)}
-              onCardLeftScreen={() => outOfFrame(index)}
-              preventSwipe={["up", "down"]}
-              flickOnSwipe={true}
-              swipeRequirementType="position"
-              swipeThreshold={20}
-            >
-              <div
-                className={`bg-white rounded-2xl shadow-lg w-full h-full flex items-center justify-center transition-transform duration-300 select-none touch-none`}
-                style={{
-                  transform: `translateY(${translateY}px) scale(${scaleFactor})`,
-                  zIndex: index,
-                }}
-              >
-                <img
-                  src={cat.url}
-                  alt={`Cat ${index + 1}`}
-                  className="w-full h-full object-cover rounded-2xl pointer-events-none select-none touch-none"
-                  draggable="false"
-                />
-              </div>
-            </TinderCard>
+  ref={childRefs[index]}
+  className="absolute w-full h-full select-none touch-none"
+  key={cat.url}
+  onSwipe={(dir) => swiped(dir, cat.url, index)}
+  onCardLeftScreen={() => outOfFrame(index)}
+  preventSwipe={["up", "down"]}
+  flickOnSwipe={true}
+  swipeRequirementType="position"
+  swipeThreshold={20}
+>
+  <div
+    className={`bg-white rounded-2xl shadow-lg w-full h-full flex items-center justify-center transition-transform duration-300 select-none touch-none`}
+    style={{
+      transform: `translateY(${translateY}px) scale(${scaleFactor})`,
+      zIndex: index,
+    }}
+  >
+    <img
+      src={cat.url}
+      alt={`Cat ${index + 1}`}
+      className="w-full h-full object-cover rounded-2xl pointer-events-none select-none touch-none"
+      draggable="false"
+    />
+
+    
+  </div>
+</TinderCard>
           );
         })}
       </div>
@@ -268,8 +275,8 @@ export default function CatSwiper() {
           onClick={() => swipe("left")}
           disabled={!canSwipe}
           className={`px-4 py-2 sm:px-5 sm:py-3 md:px-6 md:py-3 rounded-lg shadow text-base sm:text-lg md:text-xl font-semibold ${
-            canSwipe
-              ? "bg-red-500 text-white hover:bg-red-600"
+            canSwipe 
+              ? "bg-red-500 text-white hover:bg-red-600" 
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           } transition-colors`}
         >
@@ -279,8 +286,8 @@ export default function CatSwiper() {
           onClick={() => swipe("right")}
           disabled={!canSwipe}
           className={`px-4 py-2 sm:px-5 sm:py-3 md:px-6 md:py-3 rounded-lg shadow text-base sm:text-lg md:text-xl font-semibold ${
-            canSwipe
-              ? "bg-green-500 text-white hover:bg-green-600"
+            canSwipe 
+              ? "bg-green-500 text-white hover:bg-green-600" 
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           } transition-colors`}
         >
@@ -322,12 +329,14 @@ export default function CatSwiper() {
       )}
 
       {showHeart && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <span className="text-red-500 text-[6rem] sm:text-[8rem] opacity-100 animate-fade-heart">
-            ❤️
-          </span>
-        </div>
-      )}
+  <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+    <span className="text-red-500 text-[6rem] sm:text-[8rem] opacity-100 animate-fade-heart">
+      ❤️
+    </span>
+  </div>
+)}
+
+      
     </div>
   );
 }
